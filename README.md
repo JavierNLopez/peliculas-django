@@ -48,12 +48,3 @@ Sistema web para gestión de películas que permite:
 | 🎨 HTML/CSS | Frontend |
 
 ---
-
-## 🖥️ Instalación
-
-```bash
-git clone https://github.com/JavierNLopez/peliculas-django.git
-cd peliculas-django
-python -m venv venv
-source venv/bin/activate
-pip install -r requirements.txt
