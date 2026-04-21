@@ -1,18 +1,59 @@
-# ================================================
-# 🎬 NETFLIX ORIGINAL PROJECT 🍿
-# ================================================
-# 📘 Programación Web - TECNM Campus ITT
-# 👨‍💻 Javier N. López Prudencio
-# 📅 2026/04/13
-# ================================================
+# 🎬 Netflix Original Project 🍿
 
-# 🎥 Descripción:
-# Sistema de películas en consola para gestionar catálogo,
-# buscar y listar títulos de forma sencilla.
+<p align="center">
+  <img src="https://img.shields.io/badge/Django-5.x-green?style=for-the-badge&logo=django">
+  <img src="https://img.shields.io/badge/Python-3.12-blue?style=for-the-badge&logo=python">
+  <img src="https://img.shields.io/badge/PostgreSQL-Database-blue?style=for-the-badge&logo=postgresql">
+</p>
 
-# 🔗 Wokwi: https://wokwi.com/projects/XXXXXXXXXX
+---
 
-# 🎬 Tema: Streaming / Cine digital
-# 🌟 Serie: CinemaCore — The Digital Rebellion
-# 💡 Frase: "Cada película ejecuta una historia única."
-# ================================================
+## 📚 Información del Proyecto
+
+- 🎓 **Materia:** Programación Web - TECNM Campus ITT  
+- 👨‍💻 **Autor:** Javier N. López Prudencio  
+- 📅 **Fecha:** 2026/04/13  
+
+---
+
+## 🎯 Descripción
+
+Sistema web para gestión de películas que permite:
+
+✔ Cargar películas desde API (TMDB)  
+✔ Guardarlas en base de datos PostgreSQL  
+✔ Mostrar catálogo tipo Netflix  
+✔ Gestionar actores, géneros y créditos  
+
+---
+
+## 🚀 Características
+
+- 🔍 Búsqueda de películas
+- 🎭 Manejo de actores y roles
+- 🎬 Integración con TMDB API
+- 💾 Persistencia en base de datos
+- 🌐 Backend con Django
+
+---
+
+## ⚙️ Tecnologías
+
+| Tecnología | Uso |
+|----------|------|
+| 🐍 Python | Backend |
+| 🌐 Django | Framework web |
+| 🐘 PostgreSQL | Base de datos |
+| 🎬 TMDB API | Datos de películas |
+| 🎨 HTML/CSS | Frontend |
+
+---
+
+## 🖥️ Instalación
+
+```bash
+git clone https://github.com/JavierNLopez/peliculas-django.git
+cd peliculas-django
+python -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
