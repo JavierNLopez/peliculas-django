@@ -1,0 +1,28 @@
+{% extends "movies/base.html" %}
+
+{% block title %}{{ person.name }} | MyMovies{% endblock %}
+
+{% block content %}
+  <section class="hero">
+    <h1>{{ person.name }}</h1>
+    <p>Consulta las películas relacionadas con esta persona dentro del catálogo.</p>
+  </section>
+
+  <section class="section">
+    <h2>Películas relacionadas</h2>
+
+    {% if credits %}
+      <div class="person-grid">
+        {% for c in credits %}
+          <article class="person-item">
+            <h3 class="review-title">{{ c.movie.title }}</h3>
+            <div class="review-meta">Rol: {{ c.job.name }}</div>
+            <a class="btn btn-primary" href="{% url 'movie_detail' c.movie.id %}">Ver película</a>
+          </article>
+        {% endfor %}
+      </div>
+    {% else %}
+      <p class="empty">No hay películas relacionadas registradas.</p>
+    {% endif %}
+  </section>
+{% endblock %}

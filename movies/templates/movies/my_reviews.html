@@ -1,11 +1,11 @@
 {% extends "movies/base.html" %}
 
-{% block title %}Reseñas | {{ movie.title }}{% endblock %}
+{% block title %}Mis reseñas | MyMovies{% endblock %}
 
 {% block content %}
   <section class="hero">
-    <h1>Reseñas de {{ movie.title }}</h1>
-    <p>Consulta todas las opiniones registradas para esta película.</p>
+    <h1>Mis reseñas</h1>
+    <p>Aquí puedes ver todas las reseñas hechas con tu cuenta.</p>
   </section>
 
   <section class="section">
@@ -14,17 +14,15 @@
         <article class="review-card">
           <h3 class="review-title">{{ review.title }}</h3>
           <div class="review-meta">
-            Usuario: {{ review.user.username }} | Calificación: {{ review.rating }}/10
+            Película:
+            <a href="{% url 'movie_detail' review.movie.id %}"><strong>{{ review.movie.title }}</strong></a>
+            | Calificación: {{ review.rating }}/10
           </div>
           <p class="review-text">{{ review.review }}</p>
         </article>
       {% endfor %}
     {% else %}
-      <p class="empty">No existen reseñas para esta película.</p>
+      <p class="empty">Todavía no has hecho reseñas.</p>
     {% endif %}
-
-    <div class="actions">
-      <a class="btn btn-secondary" href="{% url 'movie_detail' movie.id %}">Volver al detalle</a>
-    </div>
   </section>
 {% endblock %}

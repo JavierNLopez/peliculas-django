@@ -1,71 +1,626 @@
-{% load static %}
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="utf-8">  
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}MyMovies{% endblock %}</title>
+  <style>
+    :root{
+      --bg:#071226;
+      --panel:#16233d;
+      --line:rgba(255,255,255,.08);
+      --text:#f8fafc;
+      --muted:#b6c2d2;
+      --primary:#f43f5e;
+      --primary-hover:#e11d48;
+      --secondary:#334155;
+      --gold:#fbbf24;
+      --shadow:0 12px 35px rgba(0,0,0,.30);
+    }
 
-    <link href="{% static 'output.css' %}" rel="stylesheet" />
-    <script src="https://cdn.tailwindcss.com"></script>
-    {% block head %}
+    *{box-sizing:border-box}
 
-    {% endblock head %}
-    <title> My Movies </title>
+    html,body{
+      margin:0;
+      padding:0;
+      font-family:Inter, Arial, Helvetica, sans-serif;
+      background:
+        radial-gradient(circle at top left, rgba(244,63,94,.10), transparent 30%),
+        radial-gradient(circle at top right, rgba(59,130,246,.10), transparent 25%),
+        linear-gradient(180deg, #030712 0%, #071226 55%, #08152c 100%);
+      color:var(--text);
+      min-height:100vh;
+    }
 
-      <script>
-      /*to prevent Firefox FOUC, this must be here*/
-        let FF_FOUC_FIX;
-      </script>
-     <style>
+    a{
+      color:inherit;
+      text-decoration:none;
+    }
 
-         {% block style %}
+    .navbar{
+      position:sticky;
+      top:0;
+      z-index:20;
+      backdrop-filter:blur(12px);
+      background:rgba(3,7,18,.78);
+      border-bottom:1px solid var(--line);
+    }
 
-         {% endblock style %}
-      </style>
-  </head>
+    .nav-inner{
+      width:min(1180px, 92%);
+      margin:auto;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:18px;
+      padding:14px 0;
+      flex-wrap:wrap;
+    }
 
-  <body class="bg-white dark:bg-slate-900" hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
-    {% block header %}
-      {% include "movies/header.html" %} 
-    {% endblock header %}
+    .brand{
+      display:flex;
+      align-items:center;
+      gap:12px;
+      font-size:1.5rem;
+      font-weight:800;
+    }
 
+    .brand-badge{
+      width:40px;
+      height:40px;
+      display:grid;
+      place-items:center;
+      border-radius:12px;
+      background:linear-gradient(135deg, #7c3aed, #f43f5e);
+      box-shadow:var(--shadow);
+    }
 
-    {% block content %}
+    .nav-center{
+      flex:1;
+      min-width:260px;
+      max-width:500px;
+    }
 
+    .search-form{
+      display:flex;
+      gap:10px;
+    }
 
+    .search-form input{
+      flex:1;
+      padding:12px 14px;
+      border-radius:12px;
+      border:1px solid rgba(255,255,255,.10);
+      background:rgba(255,255,255,.06);
+      color:white;
+      outline:none;
+    }
 
-    {% endblock content %}
+    .search-form input::placeholder{
+      color:#c7d2fe;
+    }
 
-   
+    .nav-links{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      align-items:center;
+    }
 
+    .nav-link{
+      padding:10px 14px;
+      border-radius:12px;
+      background:rgba(255,255,255,.04);
+      border:1px solid var(--line);
+      color:var(--muted);
+      transition:.2s ease;
+    }
 
-    {% block footer%}
-<footer class="bg-white">
-  <div class="mx-auto max-w-7xl overflow-hidden px-6 py-20 sm:py-24 lg:px-8">
-    <nav class="-mb-6 columns-2 sm:flex sm:justify-center sm:space-x-12" aria-label="Footer">
-      <div class="pb-6">
-        <a href="#" class="text-sm leading-6 text-gray-600 hover:text-gray-900">About</a>
+    .nav-link:hover{
+      background:rgba(255,255,255,.08);
+      color:var(--text);
+    }
+
+    .welcome-user{
+      color:var(--muted);
+      font-size:.95rem;
+    }
+
+    .container{
+      width:min(1180px, 92%);
+      margin:34px auto 60px;
+    }
+
+    .hero{
+      margin-bottom:28px;
+      padding:28px;
+      border-radius:24px;
+      background:linear-gradient(135deg, rgba(255,255,255,.05), rgba(255,255,255,.02));
+      border:1px solid var(--line);
+      box-shadow:var(--shadow);
+    }
+
+    .hero h1{
+      margin:0 0 10px;
+      font-size:clamp(2rem, 4vw, 3rem);
+      line-height:1.05;
+    }
+
+    .hero p{
+      margin:0;
+      max-width:760px;
+      color:var(--muted);
+      line-height:1.7;
+    }
+
+    .featured-hero{
+      position:relative;
+      overflow:hidden;
+      border-radius:28px;
+      padding:34px;
+      min-height:360px;
+      display:flex;
+      align-items:end;
+      background:#0b1220;
+      border:1px solid var(--line);
+      box-shadow:var(--shadow);
+      margin-bottom:28px;
+    }
+
+    .featured-backdrop{
+      position:absolute;
+      inset:0;
+      background-size:cover;
+      background-position:center;
+      filter:brightness(.38);
+      transform:scale(1.04);
+    }
+
+    .featured-overlay{
+      position:absolute;
+      inset:0;
+      background:linear-gradient(90deg, rgba(3,7,18,.92) 0%, rgba(3,7,18,.62) 45%, rgba(3,7,18,.25) 100%);
+    }
+
+    .featured-content{
+      position:relative;
+      z-index:2;
+      max-width:650px;
+    }
+
+    .featured-tag{
+      display:inline-block;
+      padding:8px 12px;
+      border-radius:999px;
+      background:rgba(244,63,94,.16);
+      color:#ffd7df;
+      border:1px solid rgba(244,63,94,.22);
+      margin-bottom:14px;
+      font-size:.9rem;
+      font-weight:700;
+    }
+
+    .featured-content h1{
+      margin:0 0 12px;
+      font-size:clamp(2.2rem, 5vw, 3.6rem);
+      line-height:1.05;
+    }
+
+    .featured-content p{
+      color:#dbe5f4;
+      line-height:1.7;
+      max-width:620px;
+    }
+
+    .section{
+      margin-top:26px;
+      background:linear-gradient(180deg, rgba(28,43,71,.98), rgba(22,35,61,.98));
+      border:1px solid var(--line);
+      border-radius:24px;
+      padding:24px;
+      box-shadow:var(--shadow);
+    }
+
+    .section h2{
+      margin:0 0 18px;
+      font-size:1.5rem;
+    }
+
+    .btn{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      gap:8px;
+      border:none;
+      border-radius:12px;
+      padding:12px 16px;
+      font-weight:700;
+      cursor:pointer;
+      transition:.2s ease;
+      text-decoration:none;
+    }
+
+    .btn-primary{
+      background:linear-gradient(135deg, var(--primary), #fb7185);
+      color:white;
+    }
+
+    .btn-primary:hover{
+      background:linear-gradient(135deg, var(--primary-hover), var(--primary));
+      transform:translateY(-1px);
+    }
+
+    .btn-secondary{
+      background:rgba(255,255,255,.06);
+      color:var(--text);
+      border:1px solid var(--line);
+    }
+
+    .btn-secondary:hover{
+      background:rgba(255,255,255,.10);
+    }
+
+    .btn-favorite{
+      background:rgba(251,191,36,.12);
+      color:#fde68a;
+      border:1px solid rgba(251,191,36,.24);
+    }
+
+    .btn-favorite:hover{
+      background:rgba(251,191,36,.18);
+    }
+
+    .movie-grid{
+      display:grid;
+      grid-template-columns:repeat(auto-fit, minmax(220px, 1fr));
+      gap:22px;
+    }
+
+    .movie-card{
+      background:linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.03));
+      border:1px solid var(--line);
+      border-radius:22px;
+      overflow:hidden;
+      transition:.26s ease;
+      box-shadow:var(--shadow);
+      position:relative;
+    }
+
+    .movie-card:hover{
+      transform:translateY(-8px) scale(1.01);
+      box-shadow:0 18px 45px rgba(0,0,0,.40);
+    }
+
+    .movie-card::after{
+      content:"";
+      position:absolute;
+      inset:0;
+      pointer-events:none;
+      background:linear-gradient(180deg, transparent 60%, rgba(244,63,94,.08) 100%);
+      opacity:0;
+      transition:.25s ease;
+    }
+
+    .movie-card:hover::after{
+      opacity:1;
+    }
+
+    .poster-frame{
+      width:100%;
+      height:340px;
+      background:#0b1220;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:10px;
+    }
+
+    .poster-frame img{
+      width:100%;
+      height:100%;
+      object-fit:contain;
+      display:block;
+      background:#111827;
+      border-radius:14px;
+    }
+
+    .movie-card-body{
+      padding:16px;
+    }
+
+    .movie-title{
+      margin:0 0 8px;
+      font-size:1.05rem;
+      font-weight:800;
+    }
+
+    .movie-meta{
+      margin:0 0 10px;
+      color:var(--muted);
+      font-size:.92rem;
+    }
+
+    .genre-list{
+      display:flex;
+      flex-wrap:wrap;
+      gap:8px;
+      margin:0 0 14px;
+    }
+
+    .genre-badge{
+      display:inline-block;
+      padding:6px 10px;
+      border-radius:999px;
+      background:rgba(255,255,255,.06);
+      border:1px solid var(--line);
+      color:#dbe7f8;
+      font-size:.78rem;
+      font-weight:700;
+    }
+
+    .two-col{
+      display:grid;
+      grid-template-columns:340px 1fr;
+      gap:26px;
+      align-items:start;
+    }
+
+    .poster-card{
+      background:linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.03));
+      border:1px solid var(--line);
+      border-radius:22px;
+      padding:14px;
+      box-shadow:var(--shadow);
+    }
+
+    .poster-card img{
+      width:100%;
+      max-height:520px;
+      object-fit:contain;
+      border-radius:18px;
+      display:block;
+      background:#111827;
+    }
+
+    .detail-card{
+      background:linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.03));
+      border:1px solid var(--line);
+      border-radius:24px;
+      padding:26px;
+      box-shadow:var(--shadow);
+    }
+
+    .detail-card h1{
+      margin:0 0 10px;
+      font-size:2.2rem;
+    }
+
+    .rating-badge{
+      display:inline-block;
+      margin:8px 0 18px;
+      padding:10px 14px;
+      border-radius:14px;
+      background:rgba(244,63,94,.12);
+      color:#ffd7df;
+      border:1px solid rgba(244,63,94,.22);
+      font-weight:700;
+    }
+
+    .detail-meta{
+      display:grid;
+      gap:10px;
+      margin:18px 0;
+      color:var(--muted);
+      font-size:.98rem;
+    }
+
+    .overview{
+      line-height:1.8;
+      color:#e5edf8;
+      margin-top:16px;
+    }
+
+    .actions{
+      display:flex;
+      gap:12px;
+      flex-wrap:wrap;
+      margin-top:22px;
+    }
+
+    .review-card{
+      padding:18px 0;
+      border-top:1px solid var(--line);
+    }
+
+    .review-card:first-of-type{
+      border-top:none;
+      padding-top:0;
+    }
+
+    .review-title{
+      margin:0 0 8px;
+      font-size:1.05rem;
+      font-weight:800;
+    }
+
+    .review-meta{
+      color:var(--muted);
+      font-size:.92rem;
+      margin-bottom:10px;
+    }
+
+    .review-text{
+      line-height:1.75;
+      color:#e8eef8;
+      margin:0;
+    }
+
+    .form-card{
+      max-width:760px;
+      margin:auto;
+      background:linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.03));
+      border:1px solid var(--line);
+      border-radius:24px;
+      padding:26px;
+      box-shadow:var(--shadow);
+    }
+
+    .form-card h2{
+      margin-top:0;
+      margin-bottom:18px;
+    }
+
+    form p{
+      margin:0 0 18px;
+    }
+
+    label{
+      display:block;
+      margin-bottom:8px;
+      font-weight:700;
+    }
+
+    input, textarea, select{
+      width:100%;
+      padding:13px 14px;
+      border-radius:14px;
+      border:1px solid rgba(255,255,255,.10);
+      background:#f8fafc;
+      color:#111827;
+      font-size:15px;
+      outline:none;
+    }
+
+    textarea{
+      resize:vertical;
+      min-height:140px;
+    }
+
+    .empty{
+      color:var(--muted);
+      padding:10px 0 0;
+    }
+
+    .recommend-grid{
+      display:grid;
+      grid-template-columns:repeat(auto-fit, minmax(160px, 1fr));
+      gap:18px;
+    }
+
+    .recommend-card{
+      background:rgba(255,255,255,.03);
+      border:1px solid var(--line);
+      border-radius:18px;
+      padding:10px;
+    }
+
+    .recommend-card img{
+      width:100%;
+      height:250px;
+      object-fit:contain;
+      border-radius:12px;
+      display:block;
+      margin-bottom:10px;
+      background:#0b1220;
+    }
+
+    .person-grid{
+      display:grid;
+      gap:14px;
+    }
+
+    .person-item{
+      padding:18px;
+      border-radius:18px;
+      border:1px solid var(--line);
+      background:rgba(255,255,255,.03);
+    }
+
+    .credits-grid{
+      display:grid;
+      grid-template-columns:repeat(auto-fit, minmax(220px, 1fr));
+      gap:14px;
+    }
+
+    .credit-card{
+      padding:16px;
+      border-radius:16px;
+      border:1px solid var(--line);
+      background:rgba(255,255,255,.03);
+    }
+
+    .credit-role{
+      color:var(--muted);
+      font-size:.9rem;
+      margin-top:6px;
+    }
+
+    .auth-card{
+      max-width:520px;
+      margin:auto;
+      background:linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.03));
+      border:1px solid var(--line);
+      border-radius:24px;
+      padding:28px;
+      box-shadow:var(--shadow);
+    }
+
+    .auth-card h1{
+      margin-top:0;
+      margin-bottom:12px;
+    }
+
+    .help-text, .errorlist{
+      color:#fecaca;
+      font-size:.92rem;
+      margin:8px 0 0;
+      padding-left:18px;
+    }
+
+    @media (max-width: 900px){
+      .two-col{
+        grid-template-columns:1fr;
+      }
+
+      .poster-card{
+        max-width:360px;
+        margin:auto;
+      }
+    }
+  </style>
+</head>
+<body>
+  <nav class="navbar">
+    <div class="nav-inner">
+      <a href="{% url 'home' %}" class="brand">
+        <span class="brand-badge">🎬</span>
+        <span>MyMovies</span>
+      </a>
+
+      <div class="nav-center">
+        <form class="search-form" method="get" action="{% url 'home' %}">
+          <input type="text" name="q" placeholder="Buscar películas..." value="{{ query|default:'' }}">
+          <button class="btn btn-secondary" type="submit">Buscar</button>
+        </form>
       </div>
-      <div class="pb-6">
-        <a href="https://github.com/mariosky" class="text-sm leading-6 text-gray-600 hover:text-gray-900">GitHub</a>
+
+      <div class="nav-links">
+        <a href="{% url 'home' %}" class="nav-link">Inicio</a>
+        <a href="{% url 'my_reviews' %}" class="nav-link">Mis reseñas</a>
+
+        {% if request.user.is_authenticated %}
+          <span class="welcome-user">Hola, {{ request.user.username }}</span>
+          <a href="{% url 'logout' %}" class="nav-link">Salir</a>
+        {% else %}
+          <a href="{% url 'login' %}" class="nav-link">Iniciar sesión</a>
+          <a href="{% url 'register' %}" class="nav-link">Registrarse</a>
+        {% endif %}
       </div>
-      <div class="pb-6">
-        <a href="https://www.wikiart.org/" class="text-sm leading-6 text-gray-600 hover:text-gray-900"> wikiart.org </a>
-      </div>
-    </nav>
-   
-    <p class="mt-10 text-center text-xs leading-5 text-gray-500">&copy; 2021 J. Mario García Valdez</p>
-  </div>
-</footer>
+    </div>
+  </nav>
 
-    {% endblock footer %}
-
-  <script src="https://unpkg.com/hyperscript.org@0.9.7"></script>
-  <script src="https://unpkg.com/htmx.org@1.8.5" integrity="sha384-7aHh9lqPYGYZ7sTHvzP1t3BAfLhYSTy9ArHdP3Xsr9/3TlGurYgcPBoFmXX2TX/w" crossorigin="anonymous"></script>
-
-  {% block scripts %}
-
-  {% endblock scripts %}
-
+  <main class="container">
+    {% block content %}{% endblock %}
+  </main>
 </body>
 </html>
