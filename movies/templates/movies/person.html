@@ -3,26 +3,89 @@
 {% block title %}{{ person.name }} | MyMovies{% endblock %}
 
 {% block content %}
-  <section class="hero">
-    <h1>{{ person.name }}</h1>
-    <p>Consulta las películas relacionadas con esta persona dentro del catálogo.</p>
+  <section class="two-col">
+    <div class="poster-card">
+      {% if person.image_url %}
+        <img src="{{ person.image_url }}" alt="{{ person.name }}">
+      {% else %}
+        <img src="https://via.placeholder.com/500x700?text=Actor" alt="{{ person.name }}">
+      {% endif %}
+    </div>
+
+    <div class="detail-card">
+      <h1>{{ person.name }}</h1>
+
+      <div class="detail-meta">
+        {% if person.birth_date %}
+          <div><strong>Fecha de nacimiento:</strong> {{ person.birth_date }}</div>
+        {% endif %}
+
+        {% if person.country %}
+          <div><strong>País:</strong> {{ person.country }}</div>
+        {% endif %}
+
+        <div><strong>Películas relacionadas:</strong> {{ credits|length }}</div>
+      </div>
+
+      {% if person.biography %}
+        <p class="overview">{{ person.biography }}</p>
+      {% else %}
+        <p class="overview">
+          No hay biografía registrada para esta persona todavía.
+        </p>
+      {% endif %}
+
+      <div class="actions">
+        <a class="btn btn-secondary" href="{% url 'home' %}">Volver al inicio</a>
+      </div>
+    </div>
   </section>
 
   <section class="section">
-    <h2>Películas relacionadas</h2>
+    <h2>Participaciones como actor</h2>
 
-    {% if credits %}
-      <div class="person-grid">
-        {% for c in credits %}
-          <article class="person-item">
-            <h3 class="review-title">{{ c.movie.title }}</h3>
-            <div class="review-meta">Rol: {{ c.job.name }}</div>
-            <a class="btn btn-primary" href="{% url 'movie_detail' c.movie.id %}">Ver película</a>
+    {% if acting_credits %}
+      <div class="recommend-grid">
+        {% for c in acting_credits %}
+          <article class="recommend-card">
+            <a href="{% url 'movie_detail' c.movie.id %}">
+              {% if c.movie.poster_path %}
+                <img src="https://image.tmdb.org/t/p/w300{{ c.movie.poster_path }}" alt="{{ c.movie.title }}">
+              {% else %}
+                <img src="https://via.placeholder.com/300x450?text=Sin+imagen" alt="{{ c.movie.title }}">
+              {% endif %}
+              <strong>{{ c.movie.title }}</strong>
+            </a>
+            <div class="credit-role" style="margin-top:8px;">{{ c.job.name }}</div>
           </article>
         {% endfor %}
       </div>
     {% else %}
-      <p class="empty">No hay películas relacionadas registradas.</p>
+      <p class="empty">No hay participaciones de actuación registradas.</p>
+    {% endif %}
+  </section>
+
+  <section class="section">
+    <h2>Otros créditos</h2>
+
+    {% if other_credits %}
+      <div class="recommend-grid">
+        {% for c in other_credits %}
+          <article class="recommend-card">
+            <a href="{% url 'movie_detail' c.movie.id %}">
+              {% if c.movie.poster_path %}
+                <img src="https://image.tmdb.org/t/p/w300{{ c.movie.poster_path }}" alt="{{ c.movie.title }}">
+              {% else %}
+                <img src="https://via.placeholder.com/300x450?text=Sin+imagen" alt="{{ c.movie.title }}">
+              {% endif %}
+              <strong>{{ c.movie.title }}</strong>
+            </a>
+            <div class="credit-role" style="margin-top:8px;">{{ c.job.name }}</div>
+          </article>
+        {% endfor %}
+      </div>
+    {% else %}
+      <p class="empty">No hay otros créditos registrados.</p>
     {% endif %}
   </section>
 {% endblock %}

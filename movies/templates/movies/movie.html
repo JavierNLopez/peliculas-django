@@ -1,4 +1,5 @@
 {% extends "movies/base.html" %}
+{% load movie_extras %}
 
 {% block title %}{{ movie.title }} | MyMovies{% endblock %}
 
@@ -32,8 +33,9 @@
       <div class="detail-meta">
         <div><strong>Fecha de estreno:</strong> {{ movie.release_date }}</div>
         <div><strong>Duración:</strong> {{ movie.running_time }} min</div>
-        <div><strong>Presupuesto:</strong> {{ movie.budget }}</div>
-        <div><strong>Recaudación:</strong> {{ movie.revenue }}</div>
+        <div><strong>Presupuesto:</strong> {{ movie.budget|money_us }}</div>
+        <div><strong>Recaudación:</strong> {{ movie.revenue|money_us }}</div>
+        <div><strong>Reseñas registradas:</strong> {{ reviews|length }}</div>
       </div>
 
       <p class="overview">{{ movie.overview }}</p>
@@ -50,13 +52,28 @@
   {% if credits %}
     <section class="section">
       <h2>Reparto y créditos</h2>
+
       <div class="credits-grid">
         {% for c in credits %}
-          <article class="credit-card">
-            <a href="{% url 'person_detail' c.person.id %}">
-              <strong>{{ c.person.name }}</strong>
-            </a>
-            <div class="credit-role">{{ c.job.name }}</div>
+          <article class="credit-card actor-card">
+            <div class="actor-photo-wrap">
+              {% if c.person.image_url %}
+                <img class="actor-photo" src="{{ c.person.image_url }}" alt="{{ c.person.name }}">
+              {% else %}
+                <img class="actor-photo" src="https://via.placeholder.com/180x220?text=Actor" alt="{{ c.person.name }}">
+              {% endif %}
+            </div>
+
+            <div class="actor-info">
+              <a href="{% url 'person_detail' c.person.id %}">
+                <strong>{{ c.person.name }}</strong>
+              </a>
+              <div class="credit-role">{{ c.job.name }}</div>
+
+              <div style="margin-top:12px;">
+                <a class="btn btn-secondary" href="{% url 'person_detail' c.person.id %}">Ver perfil</a>
+              </div>
+            </div>
           </article>
         {% endfor %}
       </div>
