@@ -38,6 +38,8 @@ class Movie(models.Model):
     revenue = models.BigIntegerField(null=True, blank=True)
     tmdb_id = models.IntegerField(unique=True, null=True, blank=True)
     poster_path = models.CharField(max_length=255, blank=True, null=True)
+    tmdb_vote_average = models.FloatField(null=True, blank=True)
+    tmdb_vote_count = models.IntegerField(null=True, blank=True)
     genres = models.ManyToManyField(Genre, blank=True)
 
     def __str__(self):
@@ -49,6 +51,7 @@ class MovieCredit(models.Model):
     person = models.ForeignKey(Person, on_delete=models.CASCADE)
     job = models.ForeignKey(Job, on_delete=models.CASCADE)
     role_name = models.CharField(max_length=200, blank=True, null=True)
+    credit_order = models.IntegerField(null=True, blank=True)
 
     def __str__(self):
         return f"{self.movie} - {self.person} - {self.job}"

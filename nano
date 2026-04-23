@@ -1,5 +1,4 @@
 from datetime import date
-import re
 
 import environ
 import psycopg2
@@ -34,8 +33,6 @@ def clean_biography(biography):
     if not biography:
         return None
 
-    cleaned = biography.strip()
-
     cut_phrases = [
         "Description above from the Wikipedia article",
         "licensed under CC-BY-SA",
@@ -43,14 +40,12 @@ def clean_biography(biography):
         "full list of contributors on Wikipedia",
     ]
 
+    cleaned = biography
     for phrase in cut_phrases:
         if phrase in cleaned:
             cleaned = cleaned.split(phrase)[0].strip()
 
-    cleaned = re.sub(r"\([^)]*/[^)]*\)", "", cleaned)
-    cleaned = re.sub(r"\s{2,}", " ", cleaned).strip()
-
-    return cleaned if cleaned else None
+    return cleaned.strip() if cleaned else None
 
 
 def update_people():

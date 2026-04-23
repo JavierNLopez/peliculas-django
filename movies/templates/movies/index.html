@@ -3,24 +3,93 @@
 {% block title %}Inicio | MyMovies{% endblock %}
 
 {% block content %}
-  {% if featured_movie %}
+  {% if featured_movies %}
     <section class="featured-hero">
-      <div class="featured-backdrop"
-           style="background-image:url('https://image.tmdb.org/t/p/original{{ featured_movie.poster_path }}');">
+      <div class="featured-backdrop" id="featured-backdrop"
+           style="background-image:url('https://image.tmdb.org/t/p/original{{ featured_movies.0.poster_path }}');">
       </div>
       <div class="featured-overlay"></div>
 
       <div class="featured-content">
         <div class="featured-tag">🎥 Película destacada</div>
-        <h1>{{ featured_movie.title }}</h1>
-        <p>{{ featured_movie.overview|truncatechars:240 }}</p>
+        <h1 id="featured-title">{{ featured_movies.0.title }}</h1>
+        <p id="featured-overview">{{ featured_movies.0.overview|truncatechars:240 }}</p>
 
         <div class="actions">
-          <a class="btn btn-primary" href="{% url 'movie_detail' featured_movie.id %}">Ver detalle</a>
-          <a class="btn btn-favorite" href="#">⭐ Favorito</a>
+          <a class="btn btn-primary" id="featured-link" href="{% url 'movie_detail' featured_movies.0.id %}">Ver detalle</a>
+
+          {% if request.user.is_authenticated %}
+            <a class="btn btn-favorite {% if featured_movies.0.id in favorite_ids %}active{% endif %}"
+               id="featured-favorite"
+               href="{% url 'toggle_favorite' featured_movies.0.id %}">
+              {% if featured_movies.0.id in favorite_ids %}★ Quitar favorito{% else %}⭐ Favorito{% endif %}
+            </a>
+          {% else %}
+            <a class="btn btn-favorite" id="featured-favorite" href="{% url 'login' %}">⭐ Favorito</a>
+          {% endif %}
         </div>
       </div>
     </section>
+
+    <script>
+      const featuredMovies = [
+        {% for movie in featured_movies %}
+        {
+          id: {{ movie.id }},
+          title: "{{ movie.title|escapejs }}",
+          overview: "{{ movie.overview|truncatechars:240|escapejs }}",
+          poster_path: "{{ movie.poster_path|default:''|escapejs }}",
+          is_favorite: {% if movie.id in favorite_ids %}true{% else %}false{% endif %}
+        }{% if not forloop.last %},{% endif %}
+        {% endfor %}
+      ];
+
+      let featuredIndex = 0;
+
+      function updateFeaturedMovie() {
+        if (featuredMovies.length <= 1) return;
+
+        const backdrop = document.getElementById("featured-backdrop");
+        const title = document.getElementById("featured-title");
+        const overview = document.getElementById("featured-overview");
+        const detailLink = document.getElementById("featured-link");
+        const favoriteBtn = document.getElementById("featured-favorite");
+
+        backdrop.classList.add("fade-out");
+
+        setTimeout(() => {
+          featuredIndex = (featuredIndex + 1) % featuredMovies.length;
+          const movie = featuredMovies[featuredIndex];
+
+          const backdropUrl = movie.poster_path
+            ? `https://image.tmdb.org/t/p/original${movie.poster_path}`
+            : "";
+
+          backdrop.style.backgroundImage = `url('${backdropUrl}')`;
+          title.textContent = movie.title;
+          overview.textContent = movie.overview;
+          detailLink.href = `/movie/${movie.id}/`;
+
+          {% if request.user.is_authenticated %}
+            favoriteBtn.href = `/movie/${movie.id}/favorite/`;
+            if (movie.is_favorite) {
+              favoriteBtn.textContent = "★ Quitar favorito";
+              favoriteBtn.classList.add("active");
+            } else {
+              favoriteBtn.textContent = "⭐ Favorito";
+              favoriteBtn.classList.remove("active");
+            }
+          {% else %}
+            favoriteBtn.href = "{% url 'login' %}";
+            favoriteBtn.textContent = "⭐ Favorito";
+          {% endif %}
+
+          backdrop.classList.remove("fade-out");
+        }, 450);
+      }
+
+      setInterval(updateFeaturedMovie, 18000);
+    </script>
   {% endif %}
 
   <section class="section">
@@ -32,21 +101,43 @@
       {% endif %}
     </h2>
 
+    {% if genres %}
+      <div class="filter-bar">
+        <a href="{% url 'home' %}{% if query %}?q={{ query }}{% endif %}"
+           class="filter-chip {% if not genre_id %}active{% endif %}">
+          Todos
+        </a>
+
+        {% for genre in genres %}
+          <a href="{% url 'home' %}?genre={{ genre.id }}{% if query %}&q={{ query }}{% endif %}"
+             class="filter-chip {% if genre_id == genre.id|stringformat:'s' %}active{% endif %}">
+            {{ genre.name }}
+          </a>
+        {% endfor %}
+      </div>
+    {% endif %}
+
     {% if movies %}
-      <div class="movie-grid">
+      <div class="movie-grid {% if genre_id and movies|length <= 2 %}filtered-few{% endif %}">
         {% for movie in movies %}
           <article class="movie-card">
             <div class="poster-frame">
               {% if movie.poster_path %}
                 <img src="https://image.tmdb.org/t/p/w500{{ movie.poster_path }}" alt="{{ movie.title }}">
               {% else %}
-                <img src="https://via.placeholder.com/500x750?text=Sin+imagen" alt="Sin imagen">
+                <img src="https://via.placeholder.com/500x750?text=Sin+imagen" alt="{{ movie.title }}">
               {% endif %}
             </div>
 
             <div class="movie-card-body">
               <h3 class="movie-title">{{ movie.title }}</h3>
               <p class="movie-meta">{{ movie.release_date }}</p>
+
+              {% if movie.avg_rating %}
+                <div class="rating-badge">⭐ Usuarios: {{ movie.avg_rating|floatformat:1 }}</div>
+              {% elif movie.tmdb_vote_average %}
+                <div class="rating-badge">⭐ TMDB: {{ movie.tmdb_vote_average|floatformat:1 }}</div>
+              {% endif %}
 
               <div class="genre-list">
                 {% for genre in movie.genres.all|slice:":3" %}
@@ -58,7 +149,15 @@
 
               <div class="actions">
                 <a class="btn btn-primary" href="{% url 'movie_detail' movie.id %}">Ver detalle</a>
-                <a class="btn btn-favorite" href="#">⭐ Favorito</a>
+
+                {% if request.user.is_authenticated %}
+                  <a class="btn btn-favorite {% if movie.id in favorite_ids %}active{% endif %}"
+                     href="{% url 'toggle_favorite' movie.id %}">
+                    {% if movie.id in favorite_ids %}★ Guardado{% else %}⭐ Favorito{% endif %}
+                  </a>
+                {% else %}
+                  <a class="btn btn-favorite" href="{% url 'login' %}">⭐ Favorito</a>
+                {% endif %}
               </div>
             </div>
           </article>

@@ -8,7 +8,7 @@
       {% if person.image_url %}
         <img src="{{ person.image_url }}" alt="{{ person.name }}">
       {% else %}
-        <img src="https://via.placeholder.com/500x700?text=Actor" alt="{{ person.name }}">
+        <img src="https://cdn-icons-png.flaticon.com/512/149/149071.png" alt="{{ person.name }}">
       {% endif %}
     </div>
 
@@ -30,9 +30,7 @@
       {% if person.biography %}
         <p class="overview">{{ person.biography }}</p>
       {% else %}
-        <p class="overview">
-          No hay biografía registrada para esta persona todavía.
-        </p>
+        <p class="overview">No hay biografía registrada para esta persona todavía.</p>
       {% endif %}
 
       <div class="actions">
@@ -56,7 +54,12 @@
               {% endif %}
               <strong>{{ c.movie.title }}</strong>
             </a>
-            <div class="credit-role" style="margin-top:8px;">{{ c.job.name }}</div>
+            <div class="credit-role" style="margin-top:8px;">
+              {{ c.job.name }}
+              {% if c.role_name %}
+                · {{ c.role_name }}
+              {% endif %}
+            </div>
           </article>
         {% endfor %}
       </div>

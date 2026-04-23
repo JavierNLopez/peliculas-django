@@ -9,7 +9,7 @@
       {% if movie.poster_path %}
         <img src="https://image.tmdb.org/t/p/w500{{ movie.poster_path }}" alt="{{ movie.title }}">
       {% else %}
-        <img src="https://via.placeholder.com/500x750?text=Sin+imagen" alt="Sin imagen">
+        <img src="https://via.placeholder.com/500x750?text=Sin+imagen" alt="{{ movie.title }}">
       {% endif %}
     </div>
 
@@ -17,7 +17,9 @@
       <h1>{{ movie.title }}</h1>
 
       {% if average_rating %}
-        <div class="rating-badge">⭐ Promedio: {{ average_rating|floatformat:1 }}/10</div>
+        <div class="rating-badge">⭐ Promedio usuarios: {{ average_rating|floatformat:1 }}/10</div>
+      {% elif movie.tmdb_vote_average %}
+        <div class="rating-badge">⭐ TMDB: {{ movie.tmdb_vote_average|floatformat:1 }}/10</div>
       {% else %}
         <div class="rating-badge">⭐ Sin calificaciones todavía</div>
       {% endif %}
@@ -35,6 +37,7 @@
         <div><strong>Duración:</strong> {{ movie.running_time }} min</div>
         <div><strong>Presupuesto:</strong> {{ movie.budget|money_us }}</div>
         <div><strong>Recaudación:</strong> {{ movie.revenue|money_us }}</div>
+        <div><strong>Votos TMDB:</strong> {{ movie.tmdb_vote_count|default:"N/D" }}</div>
         <div><strong>Reseñas registradas:</strong> {{ reviews|length }}</div>
       </div>
 
@@ -43,32 +46,46 @@
       <div class="actions">
         <a class="btn btn-primary" href="{% url 'add_review' movie.id %}">Agregar reseña</a>
         <a class="btn btn-secondary" href="{% url 'movie_reviews' movie.id %}">Ver todas las reseñas</a>
-        <a class="btn btn-favorite" href="#">⭐ Favorito</a>
+
+        {% if request.user.is_authenticated %}
+          <a class="btn btn-favorite {% if is_favorite %}active{% endif %}"
+             href="{% url 'toggle_favorite' movie.id %}">
+            {% if is_favorite %}★ Quitar favorito{% else %}⭐ Agregar favorito{% endif %}
+          </a>
+        {% else %}
+          <a class="btn btn-favorite" href="{% url 'login' %}">⭐ Favorito</a>
+        {% endif %}
+
         <a class="btn btn-secondary" href="{% url 'home' %}">Volver</a>
       </div>
     </div>
   </section>
 
-  {% if credits %}
+  {% if cast_credits %}
     <section class="section">
-      <h2>Reparto y créditos</h2>
-
+      <h2>Actores principales</h2>
       <div class="credits-grid">
-        {% for c in credits %}
+        {% for c in cast_credits %}
           <article class="credit-card actor-card">
-            <div class="actor-photo-wrap">
-              {% if c.person.image_url %}
-                <img class="actor-photo" src="{{ c.person.image_url }}" alt="{{ c.person.name }}">
-              {% else %}
-                <img class="actor-photo" src="https://via.placeholder.com/180x220?text=Actor" alt="{{ c.person.name }}">
-              {% endif %}
+            <div>
+              <img
+                class="actor-photo"
+                src="{% if c.person.image_url %}{{ c.person.image_url }}{% else %}https://via.placeholder.com/240x320/334155/F8FAFC?text=Actor{% endif %}"
+                alt="{{ c.person.name }}"
+                onerror="this.onerror=null;this.src='https://via.placeholder.com/240x320/334155/F8FAFC?text=Actor';">
             </div>
 
-            <div class="actor-info">
+            <div>
               <a href="{% url 'person_detail' c.person.id %}">
                 <strong>{{ c.person.name }}</strong>
               </a>
-              <div class="credit-role">{{ c.job.name }}</div>
+
+              <div class="credit-role">
+                {{ c.job.name }}
+                {% if c.role_name %}
+                  · {{ c.role_name }}
+                {% endif %}
+              </div>
 
               <div style="margin-top:12px;">
                 <a class="btn btn-secondary" href="{% url 'person_detail' c.person.id %}">Ver perfil</a>
@@ -80,23 +97,41 @@
     </section>
   {% endif %}
 
-  <section class="section">
-    <h2>Reseñas recientes</h2>
+  {% if crew_credits %}
+    <section class="section">
+      <h2>Equipo técnico</h2>
+      <div class="credits-grid">
+        {% for c in crew_credits %}
+          <article class="credit-card actor-card">
+            <div>
+              <img
+                class="actor-photo"
+                src="{% if c.person.image_url %}{{ c.person.image_url }}{% else %}https://via.placeholder.com/240x320/334155/F8FAFC?text=Persona{% endif %}"
+                alt="{{ c.person.name }}"
+                onerror="this.onerror=null;this.src='https://via.placeholder.com/240x320/334155/F8FAFC?text=Persona';">
+            </div>
 
-    {% if reviews %}
-      {% for review in reviews %}
-        <article class="review-card">
-          <h3 class="review-title">{{ review.title }}</h3>
-          <div class="review-meta">
-            Usuario: {{ review.user.username }} | Calificación: {{ review.rating }}/10
-          </div>
-          <p class="review-text">{{ review.review }}</p>
-        </article>
-      {% endfor %}
-    {% else %}
-      <p class="empty">No hay reseñas para esta película todavía.</p>
-    {% endif %}
-  </section>
+            <div>
+              <a href="{% url 'person_detail' c.person.id %}">
+                <strong>{{ c.person.name }}</strong>
+              </a>
+
+              <div class="credit-role">
+                {{ c.job.name }}
+                {% if c.role_name %}
+                  · {{ c.role_name }}
+                {% endif %}
+              </div>
+
+              <div style="margin-top:12px;">
+                <a class="btn btn-secondary" href="{% url 'person_detail' c.person.id %}">Ver perfil</a>
+              </div>
+            </div>
+          </article>
+        {% endfor %}
+      </div>
+    </section>
+  {% endif %}
 
   {% if recommended %}
     <section class="section">
@@ -109,10 +144,16 @@
               {% if m.poster_path %}
                 <img src="https://image.tmdb.org/t/p/w300{{ m.poster_path }}" alt="{{ m.title }}">
               {% else %}
-                <img src="https://via.placeholder.com/300x450?text=Sin+imagen" alt="Sin imagen">
+                <img src="https://via.placeholder.com/300x450?text=Sin+imagen" alt="{{ m.title }}">
               {% endif %}
               <strong>{{ m.title }}</strong>
             </a>
+
+            {% if m.avg_rating %}
+              <div class="credit-role" style="margin-top:8px;">⭐ Usuarios: {{ m.avg_rating|floatformat:1 }}</div>
+            {% elif m.tmdb_vote_average %}
+              <div class="credit-role" style="margin-top:8px;">⭐ TMDB: {{ m.tmdb_vote_average|floatformat:1 }}</div>
+            {% endif %}
           </article>
         {% endfor %}
       </div>

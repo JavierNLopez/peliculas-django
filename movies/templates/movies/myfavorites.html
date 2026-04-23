@@ -1,0 +1,48 @@
+{% extends "movies/base.html" %}
+
+{% block title %}Mis favoritos | MyMovies{% endblock %}
+
+{% block content %}
+  <section class="hero">
+    <h1>Mis favoritos</h1>
+    <p>Aquí puedes ver las películas que marcaste como favoritas.</p>
+  </section>
+
+  <section class="section">
+    {% if favorites %}
+      <div class="movie-grid">
+        {% for fav in favorites %}
+          <article class="movie-card">
+            <div class="poster-frame">
+              {% if fav.movie.poster_path %}
+                <img src="https://image.tmdb.org/t/p/w500{{ fav.movie.poster_path }}" alt="{{ fav.movie.title }}">
+              {% else %}
+                <img src="https://via.placeholder.com/500x750?text=Sin+imagen" alt="{{ fav.movie.title }}">
+              {% endif %}
+            </div>
+
+            <div class="movie-card-body">
+              <h3 class="movie-title">{{ fav.movie.title }}</h3>
+              <p class="movie-meta">{{ fav.movie.release_date }}</p>
+
+              <div class="genre-list">
+                {% for genre in fav.movie.genres.all|slice:":3" %}
+                  <span class="genre-badge">{{ genre.name }}</span>
+                {% empty %}
+                  <span class="genre-badge">Sin género</span>
+                {% endfor %}
+              </div>
+
+              <div class="actions">
+                <a class="btn btn-primary" href="{% url 'movie_detail' fav.movie.id %}">Ver detalle</a>
+                <a class="btn btn-favorite" href="{% url 'toggle_favorite' fav.movie.id %}">★ Quitar</a>
+              </div>
+            </div>
+          </article>
+        {% endfor %}
+      </div>
+    {% else %}
+      <p class="empty">Todavía no tienes películas favoritas.</p>
+    {% endif %}
+  </section>
+{% endblock %}

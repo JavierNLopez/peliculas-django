@@ -1,27 +1,43 @@
-import random
-
 from django.contrib.auth.decorators import login_required
 from django.db.models import Avg, Count, Q
 from django.shortcuts import get_object_or_404, redirect, render
 
 from movies.forms import MovieReviewForm
-from movies.models import Favorite, Movie, MovieCredit, MovieReview, Person
+from movies.models import Favorite, Genre, Movie, MovieCredit, MovieReview, Person
 
 
 def index(request):
     query = request.GET.get("q", "").strip()
+    genre_id = request.GET.get("genre", "").strip()
 
-    movies = Movie.objects.all().prefetch_related("genres").order_by("-release_date", "-id")
+    movies = (
+        Movie.objects.all()
+        .prefetch_related("genres")
+        .annotate(avg_rating=Avg("reviews__rating"))
+        .order_by("-release_date", "-id")
+    )
 
     if query:
-        movies = movies.filter(
-            Q(title__icontains=query) |
-            Q(overview__icontains=query) |
-            Q(genres__name__icontains=query)
-        ).distinct().order_by("-release_date", "-id")
+        movies = (
+            movies.filter(
+                Q(title__icontains=query) |
+                Q(overview__icontains=query) |
+                Q(genres__name__icontains=query)
+            )
+            .distinct()
+        )
 
-    featured_candidates = list(Movie.objects.exclude(poster_path__isnull=True).exclude(poster_path=""))
-    featured_movie = random.choice(featured_candidates) if featured_candidates else Movie.objects.order_by("-release_date").first()
+    if genre_id:
+        movies = movies.filter(genres__id=genre_id)
+
+    movies = movies.order_by("-release_date", "-id")
+
+    featured_movies = list(
+        Movie.objects.exclude(poster_path__isnull=True)
+        .exclude(poster_path="")
+        .annotate(avg_rating=Avg("reviews__rating"))
+        .order_by("-release_date")[:8]
+    )
 
     favorite_ids = set()
     if request.user.is_authenticated:
@@ -29,10 +45,14 @@ def index(request):
             Favorite.objects.filter(user=request.user).values_list("movie_id", flat=True)
         )
 
+    genres = Genre.objects.all().order_by("name")
+
     context = {
         "movies": movies,
         "query": query,
-        "featured_movie": featured_movie,
+        "genre_id": genre_id,
+        "genres": genres,
+        "featured_movies": featured_movies,
         "favorite_ids": favorite_ids,
     }
     return render(request, "movies/index.html", context)
@@ -47,9 +67,12 @@ def movie(request, movie_id):
     recommended = (
         Movie.objects.filter(genres__in=genres)
         .exclude(id=movie.id)
-        .annotate(num_genres=Count("genres"))
+        .annotate(
+            num_genres=Count("genres"),
+            avg_rating=Avg("reviews__rating"),
+        )
         .distinct()
-        .order_by("-num_genres", "-release_date")[:6]
+        .order_by("-num_genres", "-avg_rating", "-tmdb_vote_average", "-release_date")[:6]
     )
 
     average_rating = reviews.aggregate(avg=Avg("rating"))["avg"]
@@ -57,8 +80,11 @@ def movie(request, movie_id):
     credits = (
         MovieCredit.objects.filter(movie=movie)
         .select_related("person", "job")
-        .order_by("job__name", "person__name")[:16]
+        .order_by("credit_order", "person__name")
     )
+
+    cast_credits = list(credits.filter(job__name__icontains="Act")[:10])
+    crew_credits = list(credits.exclude(job__name__icontains="Act")[:8])
 
     is_favorite = False
     if request.user.is_authenticated:
@@ -69,7 +95,8 @@ def movie(request, movie_id):
         "reviews": reviews,
         "recommended": recommended,
         "average_rating": average_rating,
-        "credits": credits,
+        "cast_credits": cast_credits,
+        "crew_credits": crew_credits,
         "is_favorite": is_favorite,
         "query": request.GET.get("q", ""),
     }
@@ -114,10 +141,11 @@ def add_review(request, movie_id):
 
 def person_detail(request, person_id):
     person = get_object_or_404(Person, id=person_id)
+
     credits = (
         MovieCredit.objects.filter(person=person)
         .select_related("movie", "job")
-        .order_by("-movie__release_date", "movie__title")
+        .order_by("credit_order", "-movie__release_date", "movie__title")
     )
 
     acting_credits = credits.filter(job__name__icontains="Act")
@@ -156,7 +184,10 @@ def toggle_favorite(request, movie_id):
     else:
         Favorite.objects.create(user=request.user, movie=movie)
 
-    return redirect(request.META.get("HTTP_REFERER", "movie_detail"), movie_id=movie.id if request.resolver_match and request.resolver_match.url_name == "movie_detail" else None)
+    previous_url = request.META.get("HTTP_REFERER")
+    if previous_url:
+        return redirect(previous_url)
+    return redirect("movie_detail", movie_id=movie.id)
 
 
 @login_required
@@ -164,6 +195,8 @@ def my_favorites(request):
     favorites = (
         Favorite.objects.filter(user=request.user)
         .select_related("movie")
+        .prefetch_related("movie__genres")
+        .annotate(avg_rating=Avg("movie__reviews__rating"))
         .order_by("-created_at")
     )
 
