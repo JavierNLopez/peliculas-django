@@ -12,6 +12,11 @@ class Genre(models.Model):
 
 class Person(models.Model):
     name = models.CharField(max_length=128)
+    tmdb_person_id = models.IntegerField(null=True, blank=True, unique=True)
+    birth_date = models.DateField(null=True, blank=True)
+    country = models.CharField(max_length=120, blank=True, null=True)
+    image_url = models.URLField(blank=True, null=True)
+    biography = models.TextField(blank=True, null=True)
 
     def __str__(self):
         return self.name
@@ -43,6 +48,7 @@ class MovieCredit(models.Model):
     movie = models.ForeignKey(Movie, on_delete=models.CASCADE)
     person = models.ForeignKey(Person, on_delete=models.CASCADE)
     job = models.ForeignKey(Job, on_delete=models.CASCADE)
+    role_name = models.CharField(max_length=200, blank=True, null=True)
 
     def __str__(self):
         return f"{self.movie} - {self.person} - {self.job}"
@@ -60,3 +66,15 @@ class MovieReview(models.Model):
 
     def __str__(self):
         return f"{self.title} - {self.rating}"
+
+
+class Favorite(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="favorites")
+    movie = models.ForeignKey(Movie, on_delete=models.CASCADE, related_name="favorited_by")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ("user", "movie")
+
+    def __str__(self):
+        return f"{self.user.username} - {self.movie.title}"

@@ -1,0 +1,121 @@
+import environ
+import psycopg2
+import requests
+from datetime import date
+
+
+def get_json(url, headers):
+    response = requests.get(url, headers=headers)
+    response.raise_for_status()
+    return response.json()
+
+
+def safe_date(value):
+    if not value:
+        return None
+    try:
+        return date.fromisoformat(value)
+    except Exception:
+        return None
+
+
+def extract_country(place_of_birth):
+    if not place_of_birth:
+        return None
+    parts = [p.strip() for p in place_of_birth.split(",") if p.strip()]
+    if parts:
+        return parts[-1]
+    return None
+
+
+def update_people():
+    env = environ.Env()
+    environ.Env.read_env(".env")
+
+    headers = {
+        "accept": "application/json",
+        "Authorization": f"Bearer {env('API_TOKEN')}",
+    }
+
+    conn = psycopg2.connect(dbname="django", host="/tmp")
+    cur = conn.cursor()
+
+    try:
+        cur.execute("SELECT id, name FROM movies_person ORDER BY id")
+        people = cur.fetchall()
+
+        print(f"Total de personas a revisar: {len(people)}")
+
+        updated = 0
+        not_found = 0
+
+        for person_id, person_name in people:
+            search_url = f"https://api.themoviedb.org/3/search/person?query={person_name}&language=en-US"
+
+            try:
+                search_data = get_json(search_url, headers)
+            except Exception as e:
+                print(f"Error buscando {person_name}: {e}")
+                continue
+
+            results = search_data.get("results", [])
+            if not results:
+                print(f"No encontrado en TMDB: {person_name}")
+                not_found += 1
+                continue
+
+            tmdb_person = results[0]
+            tmdb_person_id = tmdb_person.get("id")
+
+            if not tmdb_person_id:
+                not_found += 1
+                continue
+
+            detail_url = f"https://api.themoviedb.org/3/person/{tmdb_person_id}?language=en-US"
+
+            try:
+                person_data = get_json(detail_url, headers)
+            except Exception as e:
+                print(f"Error detalle {person_name}: {e}")
+                continue
+
+            profile_path = person_data.get("profile_path")
+            image_url = f"https://image.tmdb.org/t/p/w500{profile_path}" if profile_path else None
+
+            birth_date = safe_date(person_data.get("birthday"))
+            place_of_birth = person_data.get("place_of_birth")
+            country = extract_country(place_of_birth)
+            biography = person_data.get("biography")
+
+            cur.execute(
+                """
+                UPDATE movies_person
+                SET
+                    birth_date = COALESCE(birth_date, %s),
+                    country = COALESCE(country, %s),
+                    image_url = COALESCE(image_url, %s),
+                    biography = COALESCE(biography, %s)
+                WHERE id = %s
+                """,
+                (birth_date, country, image_url, biography, person_id)
+            )
+
+            updated += 1
+            print(f"Actualizado: {person_name}")
+
+        conn.commit()
+        print(f"\n✅ Personas actualizadas: {updated}")
+        print(f"⚠️ No encontradas: {not_found}")
+
+    except Exception as e:
+        conn.rollback()
+        print("❌ Error general:")
+        print(e)
+        raise
+    finally:
+        cur.close()
+        conn.close()
+
+
+if __name__ == "__main__":
+    update_people()
