@@ -1,0 +1,22 @@
+{% extends "movies/base.html" %}
+
+{% block title %}Eliminar reseña | MyMovies{% endblock %}
+
+{% block content %}
+  <section class="form-card">
+    <h1>Eliminar reseña</h1>
+    <p class="overview">
+      ¿Seguro que quieres eliminar tu reseña
+      <strong>"{{ review_obj.title }}"</strong>
+      de <strong>{{ movie.title }}</strong>?
+    </p>
+
+    <form method="post">
+      {% csrf_token %}
+      <div class="actions">
+        <button type="submit" class="btn btn-danger">Eliminar</button>
+        <a href="{% url 'movie_detail' movie.id %}" class="btn btn-secondary">Cancelar</a>
+      </div>
+    </form>
+  </section>
+{% endblock %}

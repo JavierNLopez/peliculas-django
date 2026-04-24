@@ -1,5 +1,6 @@
 from django.contrib.auth.decorators import login_required
 from django.db.models import Avg, Count, Q
+from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 
 from movies.forms import MovieReviewForm
@@ -9,6 +10,7 @@ from movies.models import Favorite, Genre, Movie, MovieCredit, MovieReview, Pers
 def index(request):
     query = request.GET.get("q", "").strip()
     genre_id = request.GET.get("genre", "").strip()
+    ajax = request.GET.get("ajax") == "1"
 
     movies = (
         Movie.objects.all()
@@ -32,18 +34,33 @@ def index(request):
 
     movies = movies.order_by("-release_date", "-id")
 
+    favorite_ids = set()
+    if request.user.is_authenticated:
+        favorite_ids = set(
+            Favorite.objects.filter(user=request.user).values_list("movie_id", flat=True)
+        )
+
+    if ajax:
+        items = []
+        for movie in movies[:24]:
+            items.append({
+                "id": movie.id,
+                "title": movie.title,
+                "release_date": str(movie.release_date) if movie.release_date else "",
+                "poster_url": f"https://image.tmdb.org/t/p/w500{movie.poster_path}" if movie.poster_path else "https://via.placeholder.com/500x750?text=Sin+imagen",
+                "genres": [g.name for g in movie.genres.all()[:3]],
+                "avg_rating": round(movie.avg_rating, 1) if movie.avg_rating else None,
+                "tmdb_vote_average": round(movie.tmdb_vote_average, 1) if movie.tmdb_vote_average else None,
+                "is_favorite": movie.id in favorite_ids,
+            })
+        return JsonResponse({"movies": items})
+
     featured_movies = list(
         Movie.objects.exclude(poster_path__isnull=True)
         .exclude(poster_path="")
         .annotate(avg_rating=Avg("reviews__rating"))
         .order_by("-release_date")[:8]
     )
-
-    favorite_ids = set()
-    if request.user.is_authenticated:
-        favorite_ids = set(
-            Favorite.objects.filter(user=request.user).values_list("movie_id", flat=True)
-        )
 
     genres = Genre.objects.all().order_by("name")
 
@@ -135,6 +152,50 @@ def add_review(request, movie_id):
     return render(request, "movies/movie_review_form.html", {
         "movie_review_form": form,
         "movie": movie,
+        "query": request.GET.get("q", ""),
+    })
+
+
+@login_required
+def edit_review(request, review_id):
+    review = get_object_or_404(MovieReview, id=review_id, user=request.user)
+
+    if request.method == "POST":
+        form = MovieReviewForm(request.POST)
+        if form.is_valid():
+            review.rating = form.cleaned_data["rating"]
+            review.title = form.cleaned_data["title"]
+            review.review = form.cleaned_data["review"]
+            review.save()
+            return redirect("movie_detail", movie_id=review.movie.id)
+    else:
+        initial = {
+            "rating": review.rating,
+            "title": review.title,
+            "review": review.review,
+        }
+        form = MovieReviewForm(initial=initial)
+
+    return render(request, "movies/edit_review.html", {
+        "movie_review_form": form,
+        "review_obj": review,
+        "movie": review.movie,
+        "query": request.GET.get("q", ""),
+    })
+
+
+@login_required
+def delete_review(request, review_id):
+    review = get_object_or_404(MovieReview, id=review_id, user=request.user)
+    movie_id = review.movie.id
+
+    if request.method == "POST":
+        review.delete()
+        return redirect("movie_detail", movie_id=movie_id)
+
+    return render(request, "movies/delete_review.html", {
+        "review_obj": review,
+        "movie": review.movie,
         "query": request.GET.get("q", ""),
     })
 

@@ -118,16 +118,16 @@
     {% endif %}
 
     {% if movies %}
-      <div class="movie-grid {% if genre_id and movies|length <= 2 %}filtered-few{% endif %}">
+      <div id="movies-grid" class="movie-grid {% if genre_id and movies|length <= 2 %}filtered-few{% endif %}">
         {% for movie in movies %}
           <article class="movie-card">
-            <div class="poster-frame">
+            <a class="poster-frame" href="{% url 'movie_detail' movie.id %}">
               {% if movie.poster_path %}
                 <img src="https://image.tmdb.org/t/p/w500{{ movie.poster_path }}" alt="{{ movie.title }}">
               {% else %}
                 <img src="https://via.placeholder.com/500x750?text=Sin+imagen" alt="{{ movie.title }}">
               {% endif %}
-            </div>
+            </a>
 
             <div class="movie-card-body">
               <h3 class="movie-title">{{ movie.title }}</h3>
@@ -163,8 +163,11 @@
           </article>
         {% endfor %}
       </div>
+
+      <p id="movies-empty" class="empty" style="display:none;">No se encontraron películas.</p>
     {% else %}
-      <p class="empty">No se encontraron películas.</p>
+      <div id="movies-grid" class="movie-grid"></div>
+      <p id="movies-empty" class="empty">No se encontraron películas.</p>
     {% endif %}
   </section>
 {% endblock %}

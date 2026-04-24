@@ -1,0 +1,20 @@
+{% extends "movies/base.html" %}
+
+{% block title %}Editar reseña | MyMovies{% endblock %}
+
+{% block content %}
+  <section class="form-card">
+    <h1>Editar reseña</h1>
+    <p class="overview">Modifica tu reseña de <strong>{{ movie.title }}</strong>.</p>
+
+    <form method="post">
+      {% csrf_token %}
+      {{ movie_review_form.as_p }}
+
+      <div class="actions">
+        <button type="submit" class="btn btn-primary">Guardar cambios</button>
+        <a href="{% url 'movie_detail' movie.id %}" class="btn btn-secondary">Cancelar</a>
+      </div>
+    </form>
+  </section>
+{% endblock %}

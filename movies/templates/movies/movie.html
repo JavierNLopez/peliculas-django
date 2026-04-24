@@ -64,15 +64,16 @@
   {% if cast_credits %}
     <section class="section">
       <h2>Actores principales</h2>
+
       <div class="credits-grid">
         {% for c in cast_credits %}
           <article class="credit-card actor-card">
             <div>
               <img
                 class="actor-photo"
-                src="{% if c.person.image_url %}{{ c.person.image_url }}{% else %}https://via.placeholder.com/240x320/334155/F8FAFC?text=Actor{% endif %}"
+                src="{{ c.person.image_url|default:'' }}"
                 alt="{{ c.person.name }}"
-                onerror="this.onerror=null;this.src='https://via.placeholder.com/240x320/334155/F8FAFC?text=Actor';">
+                onerror="this.onerror=null;this.src=`data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='240' height='320' viewBox='0 0 240 320'><rect width='240' height='320' fill='%23334155'/><circle cx='120' cy='105' r='42' fill='%23e5e7eb'/><rect x='60' y='160' width='120' height='95' rx='40' fill='%23e5e7eb'/></svg>`;">
             </div>
 
             <div>
@@ -100,15 +101,16 @@
   {% if crew_credits %}
     <section class="section">
       <h2>Equipo técnico</h2>
+
       <div class="credits-grid">
         {% for c in crew_credits %}
           <article class="credit-card actor-card">
             <div>
               <img
                 class="actor-photo"
-                src="{% if c.person.image_url %}{{ c.person.image_url }}{% else %}https://via.placeholder.com/240x320/334155/F8FAFC?text=Persona{% endif %}"
+                src="{{ c.person.image_url|default:'' }}"
                 alt="{{ c.person.name }}"
-                onerror="this.onerror=null;this.src='https://via.placeholder.com/240x320/334155/F8FAFC?text=Persona';">
+                onerror="this.onerror=null;this.src=`data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='240' height='320' viewBox='0 0 240 320'><rect width='240' height='320' fill='%23334155'/><circle cx='120' cy='105' r='42' fill='%23e5e7eb'/><rect x='60' y='160' width='120' height='95' rx='40' fill='%23e5e7eb'/></svg>`;">
             </div>
 
             <div>
@@ -146,13 +148,14 @@
               {% else %}
                 <img src="https://via.placeholder.com/300x450?text=Sin+imagen" alt="{{ m.title }}">
               {% endif %}
-              <strong>{{ m.title }}</strong>
+
+              <div class="recommend-title">{{ m.title }}</div>
             </a>
 
             {% if m.avg_rating %}
-              <div class="credit-role" style="margin-top:8px;">⭐ Usuarios: {{ m.avg_rating|floatformat:1 }}</div>
+              <div class="credit-role">⭐ Usuarios: {{ m.avg_rating|floatformat:1 }}</div>
             {% elif m.tmdb_vote_average %}
-              <div class="credit-role" style="margin-top:8px;">⭐ TMDB: {{ m.tmdb_vote_average|floatformat:1 }}</div>
+              <div class="credit-role">⭐ TMDB: {{ m.tmdb_vote_average|floatformat:1 }}</div>
             {% endif %}
           </article>
         {% endfor %}
